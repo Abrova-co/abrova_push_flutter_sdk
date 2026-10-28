@@ -1,0 +1,40 @@
+name: abrova_push_example
+description: Comprehensive example app demonstrating all AbrovaPush SDK features including push notifications, in-app messages, inbox, A/B testing, and VoIP calls.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.10.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+
+  # AbrovaPush SDK - Push Notifications (local path for development)
+  abrova_push:
+    path: ../
+
+  # AbrovaPush VoIP - Native call UI (optional)
+  abrova_push_voip:
+    hosted: https://center.abrova.ir/api/packages/abrova/pub
+    version: ^0.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Uncomment and add assets when needed:
+  # assets:
+  #   - assets/images/
+
+  # Custom fonts can be added here:
+  # fonts:
+  #   - family: AbrovaPushIcons
+  #     fonts:
+  #       - asset: assets/fonts/abrova_push_icons.ttf

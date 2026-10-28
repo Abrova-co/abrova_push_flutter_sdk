@@ -1,0 +1,192 @@
+# Changelog
+
+## [0.1.24] - 2026-10-28
+
+Requires `abrova-push-android:0.1.19` and `AbrovaPushSDK ~> 0.1.18`.
+
+### Added
+- Opened, clicked and dismissed tracking from the native Android and iOS SDKs: tapping a notification is reported as `opened`, an action button as `clicked`, a swipe-away (Android) as `dismissed`. A tap that cold-starts the app on iOS is reported too.
+
+### Fixed
+- Android: action buttons open the app on Android 12 and later (from the native SDK).
+
+## [0.1.23] - 2026-10-14
+
+### Added
+- `sendDiagnostics` (default `true`): the SDK sends counts of its own errors, by error code, with its requests. Counts only, no personal data. Requires `abrova-push-android:0.1.18` and `AbrovaPushSDK` 0.1.17.
+
+## [0.1.22] - 2026-10-10
+
+### Fixed
+- Android 12+: a crash when registration finished while the app was not in the foreground. Requires `abrova-push-android:0.1.17`.
+
+## [0.1.21] - 2026-10-08
+
+### Fixed
+- Android: a crash when the connection was closed while it was still opening, for example on a device with no internet. Requires `abrova-push-android:0.1.16`.
+
+## [0.1.20] - 2026-10-02
+
+### Changed
+- iOS: requires `AbrovaPushSDK ~> 0.1.16`, which keeps the signed user token in the Keychain instead of UserDefaults.
+
+## [0.1.19] - 2026-10-02
+
+### Added
+- Signed user tokens (optional): `tokenProvider` on `AbrovaPushConfig`, `AbrovaPush.setTokenProvider`,
+  `AbrovaPush.setUserToken` and `AbrovaPush.onAuthError`. The same provider you pass to Abrova Chat works here.
+  Without a provider nothing changes.
+
+### Changed
+- Requires `AbrovaPushSDK ~> 0.1.15` (iOS) and `abrova-push-android:0.1.15`.
+
+## [0.1.18] - 2026-09-29
+
+### Changed
+- Uses native Android 0.1.14 and iOS 0.1.14: faster reconnects (retry capped at 60 s), 30 s keepalive, reconnect when the network returns or the app opens, and optional server-provided connection endpoints.
+
+### Fixed
+- iOS: the connection now reopens when the app returns from the background.
+
+## [0.1.17] - 2026-09-18
+
+### Added
+- A reinstall no longer leaves a ghost device behind: the native SDKs send a hashed per-install
+  fingerprint, so the server retires the row the previous install left active. Pushes stop going
+  to devices that no longer exist, and delivery stats reflect reality.
+- Android: optional Firebase Cloud Messaging bridge (`ir.abrova:abrova-push-fcm`) for devices
+  where Android has closed the Abrova connection to save battery.
+
+### Changed
+- Requires `AbrovaPushSDK ~> 0.1.13` (iOS) and `abrova-push-android:0.1.13`.
+
+## [0.1.16] - 2026-09-14
+
+### Added
+- `autoRefresh` on `AbrovaPushConfig` (default `true`): keeps a registered device up to date on launch.
+- The plugin reports itself as `flutter` with its version (`abrovaPushSdkVersion`).
+- iOS: delivery confirmation for foreground and silent notifications.
+
+### Changed
+- Requires `AbrovaPushSDK ~> 0.1.12` (iOS) and `abrova-push-android:0.1.12`.
+
+## [0.1.15] - 2026-09-09
+
+### Changed
+- Requires iOS `AbrovaPushSDK ~> 0.1.11`, which fixes a launch crash (`Symbol not found: AbrovaPush.shared`) for apps that also ship a Notification Service Extension. If you use delivery confirmation, your extension target now takes the separate `AbrovaPushSDKExtension` pod instead of the `AbrovaPushSDK/Extension` subspec — see the [iOS setup guide](https://abrova.ir/cloud/abrova-push/docs/sdks-ios).
+
+## [0.1.14] - 2026-09-08
+
+### Fixed
+- iOS: tapping a notification while the app was not running opened the app but never navigated. Apps using the UIScene lifecycle (the Flutter default) register plugins too late for iOS to deliver the launch tap, so it was discarded. The tap is now captured and returned by `getInitialMessage()`, matching Android.
+
+### Added
+- `appGroup` on `AbrovaPushConfig` (iOS only) — enables delivery confirmation from a Notification Service Extension.
+
+### Changed
+- Requires `AbrovaPushSDK ~> 0.1.9` (iOS) and `abrova-push-android:0.1.11`.
+
+## [0.1.13] - 2026-08-23
+
+### Added
+- The app build number (Android `versionCode` / iOS `CFBundleVersion`) is now sent as a separate device attribute on every `register()` call. Filter on it in the dashboard's segment builder to target specific builds within the same release — useful for hotfix rollouts and staged releases.
+
+## [0.1.12] - 2026-08-23
+
+### Added
+- Device attributes (app version, OS version, device model, language, country, timezone) are now sent automatically on every `register()` call. Use them as preset filters in the dashboard's segment builder to target specific app releases, OS versions, locales, or regions — no need to populate metadata yourself.
+
+## [0.1.11] - 2026-08-23
+
+### Changed
+- `AbrovaPush.register(metadata: ...)` now accepts `Map<String, Object?>` (was `Map<String, String>`). Values can be `String`, `int`, `double`, or `bool`. Native JSON types are preserved end-to-end so dashboard segments filter with real operators (`> 100` on `follower_count: 42`, `is true` on `is_pro`). Backward-compatible — existing `Map<String, String>` callers keep working.
+- Bumped iOS SDK to 0.1.6 (matching type-preserving change on the native side).
+
+### Fixed
+- Numeric and boolean metadata previously arrived at the backend as JSON strings, so segment operator dropdowns only exposed `=` / `≠` / `contains`. Now they arrive with correct JSON types and `>`, `<`, `is`, `is not` become available.
+
+## [0.1.10] - 2026-08-23
+
+### Added
+- `AbrovaPushInAppOverlay` widget renders in-app messages out of the box (modal, banner, fullscreen, card). Wrap your app once — no per-app renderer needed.
+- `AbrovaPushInAppTheme` for styling knobs (colors, border radius, elevation, max width, animation duration).
+- `AbrovaPushInAppBuilders` to fully replace any renderer with your own widget.
+- `AbrovaPush.recordInAppButtonClick(messageId, buttonId)` and `AbrovaPush.recordInAppDismissed(messageId)` — used internally by the overlay to record impressions on Flutter-rendered UI.
+
+### Fixed
+- In-app messages no longer silently drop when no manual `onInAppMessageReady` handler is set. The native SDK skips its own UI when the plugin sets a callback; the new overlay now renders it.
+
+## [0.1.9] - 2026-08-18
+
+### Fixed
+- Android <14: crash on start (0.1.8 regression). Bumped native SDK to 0.1.8.
+
+## [0.1.8] - 2026-08-17
+
+### Fixed
+- Android 15+: app crashed at boot (`ForegroundServiceStartNotAllowedException`). Switched foreground service to `specialUse`.
+
+### Changed
+- Bumped Android native SDK to 0.1.7.
+
+## [0.1.7] - 2026-05-26
+
+### Fixed
+- iOS: `onNotificationTapped` now fires when tapping a foreground notification.
+
+## [0.1.6] - 2026-05-13
+
+### Fixed
+- Android: custom notification sounds from `res/raw/` now play reliably across OEMs.
+
+### Changed
+- Bumped Android native SDK to 0.1.6
+
+## [0.1.5] - 2026-05-12
+
+### Fixed
+- Notification action buttons now fire the `onNotificationAction` callback on Android and iOS.
+- Android: notifications auto-dismiss after an action button tap.
+
+### Changed
+- Bumped Android native SDK to 0.1.5 and iOS native SDK to 0.1.5
+
+## [0.1.4] - 2026-05-12
+
+### Fixed
+- Android: tapping a notification from the status bar now reliably brings the app to the foreground (previously the tap was silently dropped on Android 10+ when the app was in the background)
+
+### Changed
+- Bumped Android native SDK to 0.1.4
+
+## [0.1.3] - 2026-04-30
+
+### Changed
+- Bumped Android native SDK to 0.1.3 and iOS native SDK to 0.1.4
+- subscriptionId migration: backend-issued per-install UUID alongside deviceId
+- userId now persists across app launches; `setUserId` only needs to be called after install or login
+
+## [0.1.1] - 2026-04-24
+
+### Fixed
+- APNs registration no longer triggers when PushKit is in use, preventing duplicate token registration
+
+### Added
+- VoIP call UI support in example app via abrova_push_voip plugin
+
+## [0.1.0] - 2026-04-22
+
+### Added
+- Push notifications for Android and iOS
+- In-app messages (modal, banner, fullscreen)
+- Inbox with read/archive/delete support
+- A/B testing with variant assignment and tracking
+- Topic subscriptions
+- Silent messages
+- Notification tap handling
+- Analytics tracking with custom handler
+- Auto-reconnection with exponential backoff
+- Log level configuration
+- User management (set/clear user ID)
+- Badge management
+- Network and app state callbacks

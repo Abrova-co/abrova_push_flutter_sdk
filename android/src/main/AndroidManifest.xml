@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- specialUse required for BOOT_COMPLETED on Android 15+ (dataSync is blocked). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application>
+        <!-- PN Protocol Foreground Service -->
+        <service
+            android:name="ir.abrova.push.sdk.AbrovaPushService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Long-running MQTT push notification connection to Abrova Push (abrova.ir) — keeps the device subscribed for real-time messages when the app is backgrounded, matches the behavior of Firebase Cloud Messaging and OneSignal." />
+        </service>
+
+        <!-- Boot Receiver to restart service -->
+        <receiver
+            android:name="ir.abrova.push.sdk.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+
+        <!-- App Update Receiver -->
+        <receiver
+            android:name="ir.abrova.push.sdk.AppUpdateReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Notification Action Receiver -->
+        <receiver
+            android:name="ir.abrova.push.sdk.NotificationActionReceiver"
+            android:exported="false" />
+    </application>
+
+</manifest>
