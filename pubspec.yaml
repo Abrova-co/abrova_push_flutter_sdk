@@ -1,6 +1,6 @@
 name: abrova_push
 description: Real-time push notifications, in-app messages, inbox, A/B testing, and more for Flutter apps. No Firebase dependency.
-version: 0.1.24
+version: 0.1.25
 homepage: https://abrova.ir/cloud/abrova-push
 repository: https://github.com/Abrova-co/abrova_push_flutter_sdk
 

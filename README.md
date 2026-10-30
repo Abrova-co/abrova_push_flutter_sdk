@@ -22,7 +22,7 @@ The package is published on [Abrova Center](https://center.abrova.ir). Add to yo
 dependencies:
   abrova_push:
     hosted: https://center.abrova.ir/api/packages/abrova/pub
-    version: ^0.1.24
+    version: ^0.1.25
 ```
 
 On iOS the plugin uses the native Abrova Push SDK from Abrova Center. Add these lines to the `Runner` target in `ios/Podfile`:
@@ -365,7 +365,7 @@ For apps with calling features, add the [abrova_push_voip](https://center.abrova
 dependencies:
   abrova_push:
     hosted: https://center.abrova.ir/api/packages/abrova/pub
-    version: ^0.1.24
+    version: ^0.1.25
   abrova_push_voip:  # Optional - for calling apps
     hosted: https://center.abrova.ir/api/packages/abrova/pub
     version: ^0.1.2

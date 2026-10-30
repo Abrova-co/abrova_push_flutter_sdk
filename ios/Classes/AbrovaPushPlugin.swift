@@ -141,17 +141,6 @@ public class AbrovaPushPlugin: NSObject, FlutterPlugin {
             AbrovaPush.shared.clearUserId()
             result(nil)
 
-        /// The launch tap skips the SDK's response handling (see above), so report
-    /// it as opened / clicked here. Looked up at run time: the call exists
-    /// only in newer AbrovaPushSDK versions, and with an older one this is a
-    /// no-op instead of a build error.
-    private func reportLaunchResponse(userInfo: [AnyHashable: Any], actionIdentifier: String) {
-        let selector = NSSelectorFromString("reportNotificationResponseWithUserInfo:actionIdentifier:")
-        guard AbrovaPush.shared.responds(to: selector) else { return }
-        _ = AbrovaPush.shared.perform(selector, with: userInfo as NSDictionary, with: actionIdentifier as NSString)
-    }
-
-    // MARK: - Signed User Tokens
         case "setTokenProvider":
             let enabled = (call.arguments as? [String: Any])?["enabled"] as? Bool ?? false
             if enabled {
@@ -638,6 +627,16 @@ public class AbrovaPushPlugin: NSObject, FlutterPlugin {
             return AbrovaPushMessage.from(payload: payload)
         }
         return AbrovaPushMessage.from(payload: userInfo)
+    }
+
+    /// The launch tap skips the SDK's response handling (see above), so report
+    /// it as opened / clicked here. Looked up at run time: the call exists
+    /// only in newer AbrovaPushSDK versions, and with an older one this is a
+    /// no-op instead of a build error.
+    private func reportLaunchResponse(userInfo: [AnyHashable: Any], actionIdentifier: String) {
+        let selector = NSSelectorFromString("reportNotificationResponseWithUserInfo:actionIdentifier:")
+        guard AbrovaPush.shared.responds(to: selector) else { return }
+        _ = AbrovaPush.shared.perform(selector, with: userInfo as NSDictionary, with: actionIdentifier as NSString)
     }
 
     // MARK: - Signed User Tokens
