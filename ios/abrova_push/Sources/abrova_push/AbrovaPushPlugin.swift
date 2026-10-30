@@ -1,7 +1,14 @@
 import Flutter
+#if canImport(abrova_push_objc)
+import abrova_push_objc
+#endif
 import UIKit
 import UserNotifications
+#if canImport(AbrovaPushSDK)
 import AbrovaPushSDK
+#else
+import AbrovaPush
+#endif
 
 /// Flutter plugin that wraps the native AbrovaPush iOS SDK
 /// This is similar to how the Android plugin wraps the AAR

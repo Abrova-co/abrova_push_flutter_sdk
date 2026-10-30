@@ -22,14 +22,16 @@ The package is published on [Abrova Center](https://center.abrova.ir). Add to yo
 dependencies:
   abrova_push:
     hosted: https://center.abrova.ir/api/packages/abrova/pub
-    version: ^0.1.25
+    version: ^0.1.26
 ```
 
-On iOS the plugin uses the native Abrova Push SDK from Abrova Center. Add these lines to the `Runner` target in `ios/Podfile`:
+iOS and Android need no other setup: the plugin brings the native SDKs from Abrova Center itself.
+
+If your app uses CocoaPods instead of Swift Package Manager, add these two lines at the top of `ios/Podfile`:
 
 ```ruby
-pod 'PNProtocol', :git => 'https://center.abrova.ir/abrova/pn-protocol-ios.git', :tag => '0.2.2'
-pod 'AbrovaPushSDK', :git => 'https://center.abrova.ir/abrova/abrova-push-ios-sdk.git', :tag => '0.1.19'
+source 'https://center.abrova.ir/abrova/specs.git'
+source 'https://cdn.cocoapods.org/'
 ```
 
 Then run:
@@ -365,16 +367,10 @@ For apps with calling features, add the [abrova_push_voip](https://center.abrova
 dependencies:
   abrova_push:
     hosted: https://center.abrova.ir/api/packages/abrova/pub
-    version: ^0.1.25
+    version: ^0.1.26
   abrova_push_voip:  # Optional - for calling apps
     hosted: https://center.abrova.ir/api/packages/abrova/pub
-    version: ^0.1.2
-```
-
-On iOS also add the VoIP SDK to the `Runner` target in `ios/Podfile`:
-
-```ruby
-pod 'AbrovaPushVoip', :git => 'https://center.abrova.ir/abrova/abrova-push-voip-ios-sdk.git', :tag => '0.1.2'
+    version: ^0.1.3
 ```
 
 ```dart
@@ -406,7 +402,7 @@ To trigger an incoming call, send a push with `type: "voip_call"` in the data:
 }
 ```
 
-The `type: "voip_call"` triggers VoIP delivery (PushKit on iOS, high-priority on Android). Without it, the message is delivered as a regular push notification. See the [abrova_push_voip README](https://pub.dev/packages/abrova_push_voip) for full setup guide.
+The `type: "voip_call"` triggers VoIP delivery (PushKit on iOS, high-priority on Android). Without it, the message is delivered as a regular push notification. See the [abrova_push_voip README](https://center.abrova.ir/packages/abrova_push_voip/) for full setup guide.
 
 ## Links
 

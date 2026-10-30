@@ -14,7 +14,8 @@ dependencies:
 
   # AbrovaPush SDK - Push Notifications (local path for development)
   abrova_push:
-    path: ../
+    hosted: https://center.abrova.ir/api/packages/abrova/pub
+    version: ^0.1.26
 
   # AbrovaPush VoIP - Native call UI (optional)
   abrova_push_voip:
