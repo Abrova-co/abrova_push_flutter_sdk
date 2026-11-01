@@ -5,4 +5,4 @@ const String abrovaPushSdkName = 'flutter';
 ///
 /// Must match `version` in pubspec.yaml (enforced by a unit test). Reported
 /// to the backend as the SDK version on registration.
-const String abrovaPushSdkVersion = '0.1.26';
+const String abrovaPushSdkVersion = '0.1.27';

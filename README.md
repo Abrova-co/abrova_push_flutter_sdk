@@ -22,7 +22,7 @@ The package is published on [Abrova Center](https://center.abrova.ir). Add to yo
 dependencies:
   abrova_push:
     hosted: https://center.abrova.ir/api/packages/abrova/pub
-    version: ^0.1.26
+    version: ^0.1.27
 ```
 
 iOS and Android need no other setup: the plugin brings the native SDKs from Abrova Center itself.
@@ -367,7 +367,7 @@ For apps with calling features, add the [abrova_push_voip](https://center.abrova
 dependencies:
   abrova_push:
     hosted: https://center.abrova.ir/api/packages/abrova/pub
-    version: ^0.1.26
+    version: ^0.1.27
   abrova_push_voip:  # Optional - for calling apps
     hosted: https://center.abrova.ir/api/packages/abrova/pub
     version: ^0.1.3
