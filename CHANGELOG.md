@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.28] - 2026-11-06
+
+Requires `abrova-push-android:0.1.21` and `AbrovaPushSDK ~> 0.1.20`.
+
+### Added
+- Notification channels: send with `channelId`; the native SDKs create the Console's channels and show each message
+  on its channel. `AbrovaPushMessage.channelId` and `channel` in Dart.
+
 ## [0.1.27] - 2026-11-01
 
 Requires `abrova-push-android:0.1.20` and `AbrovaPushSDK ~> 0.1.18` (unchanged).

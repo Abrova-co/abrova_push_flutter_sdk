@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'abrova_push'
-  s.version          = '0.1.27'
+  s.version          = '0.1.28'
   s.summary          = 'Abrova Push notification plugin for Flutter'
   s.description      = 'Real-time push notifications, in-app messages, inbox, A/B testing, and more for Flutter apps'
   s.homepage         = 'https://abrova.ir/cloud/abrova-push'
@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
 
   s.dependency 'Flutter'
   # Abrova Push iOS SDK (published on CocoaPods)
-  s.dependency 'AbrovaPushSDK', '~> 0.1.18'
+  s.dependency 'AbrovaPushSDK', '~> 0.1.20'
 
   s.platform         = :ios, '13.0'
   s.swift_version    = '5.0'

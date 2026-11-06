@@ -8,7 +8,7 @@ let package = Package(
         .library(name: "abrova-push", targets: ["abrova_push"])
     ],
     dependencies: [
-        .package(url: "https://center.abrova.ir/abrova/abrova-push-ios-sdk.git", from: "0.1.18")
+        .package(url: "https://center.abrova.ir/abrova/abrova-push-ios-sdk.git", from: "0.1.20")
     ],
     targets: [
         // Objective-C code: Swift Package Manager builds it as its own target.

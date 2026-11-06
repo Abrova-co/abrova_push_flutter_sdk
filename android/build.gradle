@@ -1,5 +1,5 @@
 group 'ir.abrova.push.flutter'
-version '0.1.27'
+version '0.1.28'
 
 buildscript {
     ext.kotlin_version = '1.8.22'
@@ -62,5 +62,5 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
     // Abrova Push Android SDK (published on Maven Central)
-    implementation 'ir.abrova:abrova-push-android:0.1.20'
+    implementation 'ir.abrova:abrova-push-android:0.1.21'
 }
