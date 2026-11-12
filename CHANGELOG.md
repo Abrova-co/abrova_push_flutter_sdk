@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.29] - 2026-11-13
+
+Requires `abrova-push-android:0.1.21` and `AbrovaPushSDK ~> 0.1.20` (unchanged).
+
+### Added
+- Web: Flutter web apps register and receive messages while the page is open, with the same Dart API
+  (`init`, `register`, `onMessage`, `onNotificationTapped`, topics, user ID, signed user tokens). The browser asks for
+  notification permission once. A visible page gets `onMessage`; a page in a background tab also shows a browser
+  notification. The web SDK ships inside the package, so nothing is loaded from a third-party site.
+
+### Changed
+- Needs Dart 3.3 / Flutter 3.19 or newer.
+
 ## [0.1.28] - 2026-11-06
 
 Requires `abrova-push-android:0.1.21` and `AbrovaPushSDK ~> 0.1.20`.

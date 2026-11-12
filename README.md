@@ -4,7 +4,7 @@ Real-time push notifications, in-app messages, inbox, A/B testing, and more for 
 
 ## Features
 
-- Push Notifications (Android & iOS)
+- Push Notifications (Android, iOS & Web)
 - In-App Messages (modal, banner, fullscreen)
 - Inbox (persistent message center with read/archive)
 - A/B Testing (experiments and variant assignment)
@@ -22,7 +22,7 @@ The package is published on [Abrova Center](https://center.abrova.ir). Add to yo
 dependencies:
   abrova_push:
     hosted: https://center.abrova.ir/api/packages/abrova/pub
-    version: ^0.1.28
+    version: ^0.1.29
 ```
 
 iOS and Android need no other setup: the plugin brings the native SDKs from Abrova Center itself.
@@ -121,6 +121,17 @@ Nothing else changes: messages arriving over both paths are shown once.
 Enable in Xcode -> Signing & Capabilities:
 - Push Notifications
 - Background Modes -> Remote notifications
+
+### Web
+
+Nothing to add: the web SDK ships inside the package. `register()` asks the browser for notification permission;
+if the user refuses, `register()` throws and no messages arrive.
+
+- Messages arrive while the page is open. A visible page gets `onMessage`; a page in a background tab also shows a
+  browser notification, and clicking it calls `onNotificationTapped`.
+- Android-only and iOS-only features (notification channels, VoIP, battery settings) do nothing on the web.
+- **macOS:** System Settings › Notifications › your browser (for example Google Chrome) must be allowed, and Focus /
+  Do Not Disturb must be off. macOS silently drops the browser's notifications otherwise.
 
 ## Configuration
 
@@ -367,7 +378,7 @@ For apps with calling features, add the [abrova_push_voip](https://center.abrova
 dependencies:
   abrova_push:
     hosted: https://center.abrova.ir/api/packages/abrova/pub
-    version: ^0.1.28
+    version: ^0.1.29
   abrova_push_voip:  # Optional - for calling apps
     hosted: https://center.abrova.ir/api/packages/abrova/pub
     version: ^0.1.3
