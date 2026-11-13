@@ -139,7 +139,10 @@ class AbrovaPushWeb {
     sdk.onMessage(((JSObject message) {
       _send('onMessage', _toMap(message));
     }).toJS);
-    sdk.onNotificationClick(((JSObject message, JSAny? _) {
+    // One parameter: the Web SDK calls this with (message) for a page notification and (message, action) from a
+    // service worker. A Dart function given to JS keeps its exact arity, so a second parameter would fail the
+    // one-argument call; an extra argument to a one-parameter function is simply dropped.
+    sdk.onNotificationClick(((JSObject message) {
       _send('onNotificationTapped', _toMap(message));
     }).toJS);
     sdk.onConnectionState(((JSString state) {

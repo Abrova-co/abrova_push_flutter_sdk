@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.30] - 2026-11-13
+
+Requires `abrova-push-android:0.1.21` and `AbrovaPushSDK ~> 0.1.20` (unchanged).
+
+### Fixed
+- Web: clicking a browser notification calls `onNotificationTapped` instead of throwing a `NoSuchMethodError`.
+
 ## [0.1.29] - 2026-11-13
 
 Requires `abrova-push-android:0.1.21` and `AbrovaPushSDK ~> 0.1.20` (unchanged).
