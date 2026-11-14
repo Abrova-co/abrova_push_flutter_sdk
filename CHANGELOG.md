@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.31] - 2026-11-15
+
+Requires `abrova-push-android:0.1.22` and `AbrovaPushSDK ~> 0.1.21`.
+
+### Added
+- Chat-style notifications from the native SDKs and the bundled web SDK 0.1.15: a message whose `data` has a
+  `conversationId` shows the sender's photo and keeps one conversation together (Android Conversations, iOS
+  communication notifications, one web notification per conversation). Keys: `conversationId` (required), `senderName`, `senderId`, `senderAvatarUrl`, `conversationTitle`, `conversationIsGroup`. iOS: call
+  `AbrovaPushServiceExtension.conversationContent` in your Notification Service Extension (see the README).
+
 ## [0.1.30] - 2026-11-13
 
 Requires `abrova-push-android:0.1.21` and `AbrovaPushSDK ~> 0.1.20` (unchanged).

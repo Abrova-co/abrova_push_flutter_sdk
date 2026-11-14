@@ -22,7 +22,7 @@ The package is published on [Abrova Center](https://center.abrova.ir). Add to yo
 dependencies:
   abrova_push:
     hosted: https://center.abrova.ir/api/packages/abrova/pub
-    version: ^0.1.30
+    version: ^0.1.31
 ```
 
 iOS and Android need no other setup: the plugin brings the native SDKs from Abrova Center itself.
@@ -262,6 +262,25 @@ AbrovaPush.onAuthError((event) {
 `AbrovaPush.setTokenProvider(...)` sets or removes the provider later, and `AbrovaPush.setUserToken(token)`
 hands over a token you fetched yourself.
 
+## Conversation Notifications
+
+A message whose `data` has a `conversationId` is shown chat-style: the sender's photo, one conversation together
+(Android Conversations, iOS communication notifications, one web notification per conversation). Nothing to
+call in your code; messages without `conversationId` look as before. Abrova Chat sends these keys for you.
+
+| Key | |
+|---|---|
+| `conversationId` | Required. One conversation per id (your chat or room id). |
+| `senderName` | Who wrote the message (else the title). |
+| `senderId` | Tells two senders with the same name apart. |
+| `senderAvatarUrl` | An https image for the sender's photo. |
+| `conversationTitle` | The group's name (shown for groups). |
+| `conversationIsGroup` | `true` for a group. |
+
+iOS: add the **Communication Notifications** capability and `INSendMessageIntent` in `NSUserActivityTypes`, and in
+your Notification Service Extension call `AbrovaPushServiceExtension.conversationContent(for: request) { contentHandler($0) }`.
+Guide: https://abrova.ir/docs/push/conversation-notifications
+
 ## In-App Messages
 
 ```dart
@@ -378,7 +397,7 @@ For apps with calling features, add the [abrova_push_voip](https://center.abrova
 dependencies:
   abrova_push:
     hosted: https://center.abrova.ir/api/packages/abrova/pub
-    version: ^0.1.30
+    version: ^0.1.31
   abrova_push_voip:  # Optional - for calling apps
     hosted: https://center.abrova.ir/api/packages/abrova/pub
     version: ^0.1.3
