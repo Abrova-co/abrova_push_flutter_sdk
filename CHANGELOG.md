@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.33] - 2026-11-15
+
+Requires `abrova-push-android:0.1.22` and `AbrovaPushSDK ~> 0.1.21` (unchanged).
+
+### Fixed
+- Web (`webPush: true`): bundled web SDK 0.1.17 subscribes only once the service worker is active. On iPhone
+  home-screen apps the first subscription was refused, so notifications came only while the app was open.
+
 ## [0.1.32] - 2026-11-15
 
 Requires `abrova-push-android:0.1.22` and `AbrovaPushSDK ~> 0.1.21` (unchanged).
