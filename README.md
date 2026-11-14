@@ -22,7 +22,7 @@ The package is published on [Abrova Center](https://center.abrova.ir). Add to yo
 dependencies:
   abrova_push:
     hosted: https://center.abrova.ir/api/packages/abrova/pub
-    version: ^0.1.33
+    version: ^0.1.34
 ```
 
 iOS and Android need no other setup: the plugin brings the native SDKs from Abrova Center itself.
@@ -153,6 +153,8 @@ await AbrovaPush.register();
 - Run the setup command again after upgrading `abrova_push`. Without the file, `webPush` stays off and the app works
   as before (a warning is printed in the browser console).
 - iPhone: Web Push works only in an app added to the home screen (Share › Add to Home Screen), not in a Safari tab.
+- Safari accepts the subscription only right after a tap. `AbrovaPush.getWebPushStatus()` says how it went; on
+  `failed: NotAllowedError…`, show a button that calls `register()` again.
 
 ## Configuration
 
@@ -418,7 +420,7 @@ For apps with calling features, add the [abrova_push_voip](https://center.abrova
 dependencies:
   abrova_push:
     hosted: https://center.abrova.ir/api/packages/abrova/pub
-    version: ^0.1.33
+    version: ^0.1.34
   abrova_push_voip:  # Optional - for calling apps
     hosted: https://center.abrova.ir/api/packages/abrova/pub
     version: ^0.1.3

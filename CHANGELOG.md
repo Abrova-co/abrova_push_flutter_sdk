@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.34] - 2026-11-15
+
+Requires `abrova-push-android:0.1.22` and `AbrovaPushSDK ~> 0.1.21` (unchanged).
+
+### Added
+- `AbrovaPush.getWebPushStatus()` (web): `subscribed`, or why Web Push is not (`failed: NotAllowedError…` on iPhone
+  = call `register()` again from a tap). Null on Android and iOS.
+
+### Fixed
+- Web (`webPush: true`), iPhone home-screen apps: Safari refused the subscription although notifications were
+  allowed. The worker is now prepared when the app starts, and `register()` subscribes first (web SDK 0.1.18).
+
 ## [0.1.33] - 2026-11-15
 
 Requires `abrova-push-android:0.1.22` and `AbrovaPushSDK ~> 0.1.21` (unchanged).
