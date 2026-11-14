@@ -14,6 +14,8 @@ Requires `abrova-push-android:0.1.22` and `AbrovaPushSDK ~> 0.1.21` (unchanged).
 
 ## [0.1.33] - 2026-11-15
 
+**Withdrawn from Abrova Center:** Web Push on iPhone home-screen apps did not work in this version. Use 0.1.34.
+
 Requires `abrova-push-android:0.1.22` and `AbrovaPushSDK ~> 0.1.21` (unchanged).
 
 ### Fixed
@@ -21,6 +23,8 @@ Requires `abrova-push-android:0.1.22` and `AbrovaPushSDK ~> 0.1.21` (unchanged).
   home-screen apps the first subscription was refused, so notifications came only while the app was open.
 
 ## [0.1.32] - 2026-11-15
+
+**Withdrawn from Abrova Center:** Web Push on iPhone home-screen apps did not work in this version. Use 0.1.34.
 
 Requires `abrova-push-android:0.1.22` and `AbrovaPushSDK ~> 0.1.21` (unchanged).
 
