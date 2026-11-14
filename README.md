@@ -22,7 +22,7 @@ The package is published on [Abrova Center](https://center.abrova.ir). Add to yo
 dependencies:
   abrova_push:
     hosted: https://center.abrova.ir/api/packages/abrova/pub
-    version: ^0.1.31
+    version: ^0.1.32
 ```
 
 iOS and Android need no other setup: the plugin brings the native SDKs from Abrova Center itself.
@@ -132,6 +132,27 @@ if the user refuses, `register()` throws and no messages arrive.
 - Android-only and iOS-only features (notification channels, VoIP, battery settings) do nothing on the web.
 - **macOS:** System Settings › Notifications › your browser (for example Google Chrome) must be allowed, and Focus /
   Do Not Disturb must be off. macOS silently drops the browser's notifications otherwise.
+
+#### Notifications while the app is closed (Web Push, PWA)
+
+Opt in with `webPush: true` to get notifications while the web app is closed, also in an iPhone home-screen app
+(iOS 16.4+):
+
+```sh
+dart run abrova_push:web_push_setup   # once, in the app folder: copies abrova-push-sw.js into web/
+```
+
+```dart
+await AbrovaPush.init(AbrovaPushConfig(apiKey: 'ab_live_...', webPush: true));
+// iOS: call register() from a button tap inside the home-screen app.
+await AbrovaPush.register();
+```
+
+- The worker is registered under its own scope (`abrova-push/`), so Flutter's own service worker is untouched.
+- A tap on a notification while the app is closed opens it; `getInitialMessage()` returns the message.
+- Run the setup command again after upgrading `abrova_push`. Without the file, `webPush` stays off and the app works
+  as before (a warning is printed in the browser console).
+- iPhone: Web Push works only in an app added to the home screen (Share › Add to Home Screen), not in a Safari tab.
 
 ## Configuration
 
@@ -397,7 +418,7 @@ For apps with calling features, add the [abrova_push_voip](https://center.abrova
 dependencies:
   abrova_push:
     hosted: https://center.abrova.ir/api/packages/abrova/pub
-    version: ^0.1.31
+    version: ^0.1.32
   abrova_push_voip:  # Optional - for calling apps
     hosted: https://center.abrova.ir/api/packages/abrova/pub
     version: ^0.1.3

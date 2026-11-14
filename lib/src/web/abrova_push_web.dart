@@ -3,8 +3,10 @@
 // apps load nothing from a CDN). The Dart API in abrova_push.dart is unchanged.
 //
 // Messages arrive over Abrova's real-time connection while the page is open.
-// Background Web Push (service worker) is off: it would go through the
-// browser makers' push servers.
+// With `webPush: true` (opt-in), the Abrova Push service worker also receives
+// them through the browser's Web Push while the app is closed. It is registered
+// under its own scope (`abrova-push/`), so Flutter's service worker at the root
+// is never replaced.
 import 'dart:async';
 import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
@@ -130,10 +132,15 @@ class AbrovaPushWeb {
     if (constructor == null) {
       throw PlatformException(code: 'web_sdk_missing', message: 'The Abrova Push Web SDK did not load');
     }
+    final webPush = config['webPush'] == true && await _workerAvailable();
     final options = JSObject()
       ..['apiKey'] = (config['apiKey'] as String).toJS
-      ..['autoRegisterServiceWorker'] = false.toJS
+      ..['autoRegisterServiceWorker'] = webPush.toJS
       ..['autoRefresh'] = (config['autoRefresh'] != false).toJS;
+    if (webPush) {
+      options['serviceWorkerPath'] = _appPath(_workerFile).toJS;
+      options['serviceWorkerScope'] = _appPath(_workerScope).toJS;
+    }
     if (_useTokenProvider) options['tokenProvider'] = _tokenProvider.toJS;
     final sdk = _Sdk(constructor.callAsConstructor<JSObject>(options));
     sdk.onMessage(((JSObject message) {
@@ -200,6 +207,34 @@ class AbrovaPushWeb {
       };
 
   /// Loads the bundled Web SDK once, from the app's own assets.
+  static const _workerFile = 'abrova-push-sw.js';
+  static const _workerScope = 'abrova-push/';
+
+  /// [relative] under the app's base address (`<base href>`), as a path.
+  static String _appPath(String relative) {
+    final document = globalContext['document'] as JSObject;
+    final base = (document['baseURI'] as JSString?)?.toDart ?? '/';
+    return Uri.parse(base).resolve(relative).path;
+  }
+
+  /// The worker file is served next to index.html (`dart run abrova_push:web_push_setup` puts it in web/). Without
+  /// it, Web Push stays off and the app works as before; registering a missing worker would fail register().
+  static Future<bool> _workerAvailable() async {
+    try {
+      final response = await globalContext
+          .callMethod<JSPromise<JSObject>>('fetch'.toJS, _appPath(_workerFile).toJS, {'method': 'HEAD', 'cache': 'no-store'}.jsify())
+          .toDart;
+      if ((response['ok'] as JSBoolean?)?.toDart == true) return true;
+    } catch (_) {
+      // Offline or blocked: treated as missing.
+    }
+    (globalContext['console'] as JSObject?)?.callMethod<JSAny?>(
+      'warn'.toJS,
+      'Abrova Push: webPush is on but $_workerFile was not found next to index.html. Run `dart run abrova_push:web_push_setup` in the app folder. Web Push stays off.'.toJS,
+    );
+    return false;
+  }
+
   static Future<void> _loadScript() {
     if (globalContext['AbrovaPush'] != null) return Future.value();
     return _loading ??= () {
