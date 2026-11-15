@@ -64,6 +64,12 @@ class AbrovaPushConfig {
   /// Android and iOS apps ignore it.
   final bool webPush;
 
+  /// Web, with [webPush]: register the service worker at the app's root so it controls the page, instead of its own
+  /// scope (`abrova-push/`). Some iPhones accept a Web Push subscription only from a worker that controls the page.
+  /// The app must then not start Flutter's own service worker (it would replace this one and remove it):
+  /// `dart run abrova_push:web_push_setup --root` writes a `web/flutter_bootstrap.js` that does not.
+  final bool webPushAtRoot;
+
   const AbrovaPushConfig({
     required this.apiKey,
     this.notificationIcon,
@@ -76,6 +82,7 @@ class AbrovaPushConfig {
     this.tokenProvider,
     this.sendDiagnostics = true,
     this.webPush = false,
+    this.webPushAtRoot = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -93,6 +100,7 @@ class AbrovaPushConfig {
       'sendDiagnostics': sendDiagnostics,
       // Web only; left out when off, so the native SDKs get the same map as before.
       if (webPush) 'webPush': true,
+      if (webPush && webPushAtRoot) 'webPushAtRoot': true,
     };
   }
 }

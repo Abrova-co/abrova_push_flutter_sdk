@@ -146,7 +146,7 @@ class AbrovaPushWeb {
       ..['autoRefresh'] = (config['autoRefresh'] != false).toJS;
     if (webPush) {
       options['serviceWorkerPath'] = _appPath(_workerFile).toJS;
-      options['serviceWorkerScope'] = _appPath(_workerScope).toJS;
+      options['serviceWorkerScope'] = _appPath(config['webPushAtRoot'] == true ? '' : _workerScope).toJS;
     }
     if (_useTokenProvider) options['tokenProvider'] = _tokenProvider.toJS;
     final sdk = _Sdk(constructor.callAsConstructor<JSObject>(options));

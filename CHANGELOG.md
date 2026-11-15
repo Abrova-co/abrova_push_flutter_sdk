@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.36] - 2026-11-15
+
+Requires `abrova-push-android:0.1.22` and `AbrovaPushSDK ~> 0.1.21` (unchanged).
+
+### Added
+- Web: `webPushAtRoot: true` registers the service worker at the app's root, so it controls the page (some iPhones
+  accept a Web Push subscription only then). `dart run abrova_push:web_push_setup --root` writes a
+  `web/flutter_bootstrap.js` that does not start Flutter's own service worker. A worker left under `abrova-push/` is
+  removed. Bundled web SDK 0.1.20.
+
 ## [0.1.35] - 2026-11-15
 
 Requires `abrova-push-android:0.1.22` and `AbrovaPushSDK ~> 0.1.21` (unchanged).
