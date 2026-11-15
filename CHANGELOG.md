@@ -12,12 +12,16 @@ Requires `abrova-push-android:0.1.22` and `AbrovaPushSDK ~> 0.1.21` (unchanged).
 
 ## [0.1.35] - 2026-11-15
 
+**Withdrawn from Abrova Center:** Web Push did not subscribe on some iPhones (worker under its own scope). Use 0.1.36 with `webPushAtRoot: true`.
+
 Requires `abrova-push-android:0.1.22` and `AbrovaPushSDK ~> 0.1.21` (unchanged).
 
 ### Changed
 - Bundled web SDK 0.1.19: a refused Web Push subscription reports what the browser said, with the registration.
 
 ## [0.1.34] - 2026-11-15
+
+**Withdrawn from Abrova Center:** Web Push did not subscribe on some iPhones (worker under its own scope). Use 0.1.36 with `webPushAtRoot: true`.
 
 Requires `abrova-push-android:0.1.22` and `AbrovaPushSDK ~> 0.1.21` (unchanged).
 
