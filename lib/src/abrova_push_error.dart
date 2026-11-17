@@ -9,6 +9,7 @@ enum AbrovaPushErrorCode {
   authenticationFailed(1004, 'Authentication failed - invalid credentials'),
   sslError(1005, 'SSL/TLS handshake failed'),
   brokerUnavailable(1006, 'MQTT broker is unavailable'),
+  connectionSetupFailed(1007, 'Connection could not be set up'),
 
   // Subscription errors (1100-1199)
   subscriptionFailed(1100, 'Failed to subscribe to topic'),
