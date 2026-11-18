@@ -6,7 +6,7 @@ Requires `abrova-push-android:0.1.23` and `AbrovaPushSDK ~> 0.1.22`. Bundled web
 
 ### Added
 - Error reports say why (Android, iOS and web). With `sendDiagnostics` on (the default), the SDK's own error counts
-  now also carry a short reason from a fixed list (for example `timeout`, `dns`, `tls`, an MQTT or HTTP status code),
+  now also carry a short reason from a fixed list (for example `timeout`, `dns`, `tls`, a connection or HTTP status code),
   the port and, on phones, the network type (Wi-Fi or mobile). Never a message, address, user or device detail.
 - New error code `AbrovaPushErrorCode.connectionSetupFailed` (`1007`): a connection that failed while it was being
   set up, before any network traffic. It was reported as `unknownError` (`9999`) before.

@@ -135,7 +135,7 @@ flutter_example/
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize with API key (MQTT config auto-fetched)
+  // Initialize with API key (connection settings are fetched automatically)
   await AbrovaPush.init(AbrovaPushConfig(
     apiKey: 'ab_live_your_key',
     notificationIcon: 'ic_notification', // Android only
