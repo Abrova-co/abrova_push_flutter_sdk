@@ -424,6 +424,12 @@ public class AbrovaPushPlugin: NSObject, FlutterPlugin {
         case "openServiceNotificationSettings":
             result(nil)
 
+        // Notifications turned off: what the phone says, and the app's page in Settings.
+        case "areNotificationsEnabled":
+            AbrovaPush.shared.areNotificationsEnabled { enabled in result(enabled) }
+        case "openNotificationSettings":
+            result(AbrovaPush.shared.openNotificationSettings())
+
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -453,6 +459,10 @@ public class AbrovaPushPlugin: NSObject, FlutterPlugin {
         )
 
         AbrovaPush.shared.initialize(config: config)
+        // Notifications turned on or off (e.g. back from Settings).
+        AbrovaPush.shared.setNotificationPermissionListener { [weak self] enabled in
+            self?.invokeMethod("onNotificationPermissionChanged", arguments: enabled)
+        }
         self.showNotificationInForeground = args["showNotificationInForeground"] as? Bool ?? true
 
         // Normally already claimed in didFinishLaunchingWithOptions above;

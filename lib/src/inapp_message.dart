@@ -197,6 +197,9 @@ class InAppMessageContent {
   final String? textColor;
   final List<InAppButton> buttons;
 
+  /// Banner only: `top` (default) or `bottom`, as chosen in the Console.
+  final String? position;
+
   InAppMessageContent({
     required this.title,
     required this.body,
@@ -204,7 +207,21 @@ class InAppMessageContent {
     this.backgroundColor,
     this.textColor,
     this.buttons = const [],
+    this.position,
   });
+
+  /// The same content with the banner position set where it has none (translations carry no position).
+  InAppMessageContent withPosition(String? fallback) => position != null || fallback == null
+      ? this
+      : InAppMessageContent(
+          title: title,
+          body: body,
+          imageUrl: imageUrl,
+          backgroundColor: backgroundColor,
+          textColor: textColor,
+          buttons: buttons,
+          position: fallback,
+        );
 
   factory InAppMessageContent.fromMap(Map<String, dynamic> map) {
     final buttonsList = <InAppButton>[];
@@ -221,6 +238,7 @@ class InAppMessageContent {
       backgroundColor: map['backgroundColor'],
       textColor: map['textColor'],
       buttons: buttonsList,
+      position: (map['position'] == 'top' || map['position'] == 'bottom') ? map['position'] as String : null,
     );
   }
 
@@ -232,6 +250,7 @@ class InAppMessageContent {
       'backgroundColor': backgroundColor,
       'textColor': textColor,
       'buttons': buttons.map((b) => b.toMap()).toList(),
+      if (position != null) 'position': position,
     };
   }
 }
@@ -342,14 +361,14 @@ class InAppMessage {
     // Find exact match first
     for (final loc in localizations) {
       if (loc.locale.toLowerCase() == locale.toLowerCase()) {
-        return loc.content;
+        return loc.content.withPosition(content.position);
       }
     }
 
     // Find language match
     for (final loc in localizations) {
       if (loc.locale.toLowerCase().startsWith(deviceLocale)) {
-        return loc.content;
+        return loc.content.withPosition(content.position);
       }
     }
 

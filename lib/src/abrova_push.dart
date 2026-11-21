@@ -179,9 +179,26 @@ typedef AbrovaPushAnalyticsCallback = void Function(
   Map<String, dynamic>? properties,
 );
 
+/// Whether this phone shows the app's notifications. The same names as in abrova_push_desktop, so one code path
+/// serves phones and computers.
+enum AbrovaPushNotificationPermission {
+  /// Allowed: notifications are shown.
+  allowed,
+
+  /// Not allowed yet, or turned off in the phone's settings: pushes still arrive but are not shown. Abrova tells
+  /// the server too, so the Console shows these devices and why their messages were not seen.
+  notAllowed,
+
+  /// No permission applies here (web).
+  notNeeded,
+}
+
 /// Main AbrovaPush class - entry point for the SDK
 class AbrovaPush {
   static const MethodChannel _channel = MethodChannel('ir.abrova.push/main');
+
+  static final StreamController<AbrovaPushNotificationPermission> _permission =
+      StreamController<AbrovaPushNotificationPermission>.broadcast();
 
   static OnMessageCallback? _onMessage;
   static OnConnectionStateCallback? _onConnectionState;
@@ -950,6 +967,24 @@ class AbrovaPush {
     return result ?? false;
   }
 
+  /// Notifications were turned on or off (checked at [init] and each time the app comes back to the front, e.g.
+  /// from Settings). Show your own "Turn on notifications" hint here and call [openNotificationSettings] from it.
+  static Stream<AbrovaPushNotificationPermission> get onNotificationPermissionChanged => _permission.stream;
+
+  /// Whether notifications may be shown now (see [AbrovaPushNotificationPermission]).
+  static Future<AbrovaPushNotificationPermission> notificationPermission() async {
+    final enabled = await _channel.invokeMethod<bool>('areNotificationsEnabled');
+    if (enabled == null) return AbrovaPushNotificationPermission.notNeeded;
+    return enabled ? AbrovaPushNotificationPermission.allowed : AbrovaPushNotificationPermission.notAllowed;
+  }
+
+  /// Opens this app's notification settings, where the user can turn notifications back on (an app can't do it
+  /// itself, and the system asks only once). Returns false if no settings page could be opened.
+  static Future<bool> openNotificationSettings() async {
+    final opened = await _channel.invokeMethod<bool>('openNotificationSettings');
+    return opened ?? false;
+  }
+
   /// Open system settings for the push service notification channel.
   /// The user can toggle the channel off to hide the persistent notification
   /// while keeping the push service alive in the background.
@@ -1066,6 +1101,14 @@ class AbrovaPush {
         _trackEvent(AbrovaPushAnalyticsEvent.connectionError, {
           'error': errorMsg,
         });
+        break;
+
+      case 'onNotificationPermissionChanged':
+        if (call.arguments is bool && !_permission.isClosed) {
+          _permission.add(call.arguments as bool
+              ? AbrovaPushNotificationPermission.allowed
+              : AbrovaPushNotificationPermission.notAllowed);
+        }
         break;
 
       case 'onDetailedError':

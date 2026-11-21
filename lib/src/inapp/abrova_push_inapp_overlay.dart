@@ -228,11 +228,20 @@ class _AbrovaPushInAppOverlayState extends State<AbrovaPushInAppOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    return Overlay(
-      key: _overlayKey,
-      initialEntries: [
-        OverlayEntry(builder: (_) => widget.child),
-      ],
+    // Placed above MaterialApp (as documented) there is no text direction yet; the overlay needs one.
+    // Each message sets its own direction from its words and the app's language.
+    final direction = Directionality.maybeOf(context) ??
+        (_rtlLanguages.contains(PlatformDispatcher.instance.locale.languageCode.toLowerCase())
+            ? TextDirection.rtl
+            : TextDirection.ltr);
+    return Directionality(
+      textDirection: direction,
+      child: Overlay(
+        key: _overlayKey,
+        initialEntries: [
+          OverlayEntry(builder: (_) => widget.child),
+        ],
+      ),
     );
   }
 }
@@ -256,7 +265,7 @@ class _AbrovaInAppRoot extends StatelessWidget {
   Widget build(BuildContext context) {
     final locale = _resolveLocale(context);
     final content = message.getLocalizedContent(locale);
-    final direction = _resolveDirection(context, locale);
+    final direction = _resolveDirection(context, locale, content);
 
     final custom = builders.forType(message.type);
     final Widget renderer;
@@ -321,17 +330,33 @@ class _AbrovaInAppRoot extends StatelessWidget {
         : '${locale.languageCode}-${locale.countryCode}';
   }
 
-  static TextDirection _resolveDirection(BuildContext context, String locale) {
+  static TextDirection _resolveDirection(BuildContext context, String locale, InAppMessageContent content) {
+    // Right-to-left words (a Farsi app's own text) read right-to-left whatever the app's language.
+    if (RegExp(r'[\u0590-\u08FF]').hasMatch(content.title + content.body)) return TextDirection.rtl;
     final direction = Directionality.maybeOf(context);
     if (direction != null) return direction;
-    const rtl = {'fa', 'ar', 'he', 'ur', 'ps', 'sd', 'ku'};
-    return rtl.contains(locale.split('-').first.toLowerCase())
+    return _rtlLanguages.contains(locale.split('-').first.toLowerCase())
         ? TextDirection.rtl
         : TextDirection.ltr;
   }
 }
 
 // ==================== Shared helpers ====================
+
+const Set<String> _rtlLanguages = {'fa', 'ar', 'he', 'ur', 'ps', 'sd', 'ku'};
+
+/// "Close" in the app's language when MaterialApp's localizations are there (not above MaterialApp).
+String _closeLabel(BuildContext context) =>
+    Localizations.of<MaterialLocalizations>(context, MaterialLocalizations)?.closeButtonTooltip ?? 'Close';
+
+/// Image width : height, as in the Console (Push › In-app).
+const double kInAppModalImageRatio = 2;
+const double kInAppFullscreenImageRatio = 2;
+const double kInAppCardImageRatio = 3;
+
+const Color _primary = Color(0xFF1C72C8);
+const Color _destructive = Color(0xFFDC2626);
+const Color _defaultText = Color(0xFF18181B);
 
 Color? _parseColor(String? hex) {
   if (hex == null || hex.isEmpty) return null;
@@ -341,44 +366,133 @@ Color? _parseColor(String? hex) {
   return value == null ? null : Color(value);
 }
 
-Widget _buildImage(String url) {
-  return Image.network(
-    url,
-    fit: BoxFit.cover,
-    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-    loadingBuilder: (_, child, progress) =>
-        progress == null ? child : const SizedBox(height: 120),
+Widget _image(String url, double ratio) => AspectRatio(
+      aspectRatio: ratio,
+      child: Container(
+        color: const Color(0x14000000),
+        child: Image.network(
+          url,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        ),
+      ),
+    );
+
+/// Title and body, as the Console's preview: bold title, body slightly faded.
+Widget _texts(BuildContext context, InAppMessageContent c, Color fg,
+    {required double titleSize, required double bodySize, double top = 12}) {
+  return Padding(
+    padding: EdgeInsetsDirectional.fromSTEB(14, top, 14, 4),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (c.title.isNotEmpty)
+          Text(c.title, style: TextStyle(color: fg, fontSize: titleSize, fontWeight: FontWeight.w700, height: 1.3)),
+        if (c.title.isNotEmpty && c.body.isNotEmpty) const SizedBox(height: 4),
+        if (c.body.isNotEmpty)
+          Text(c.body, style: TextStyle(color: fg.withValues(alpha: 0.85), fontSize: bodySize, height: 1.35)),
+      ],
+    ),
   );
 }
 
-Widget _buildButton(
-  BuildContext context,
-  InAppButton button,
-  ValueChanged<InAppButton> onTap,
-  Color? textColor,
-) {
-  final onPressed = () => onTap(button);
-  switch (button.style) {
+/// One button in the Console's styles: primary filled blue, secondary outlined, text plain, destructive red.
+Widget _button(InAppButton b, Color fg, ValueChanged<InAppButton> onTap, {bool compact = false}) {
+  final size = compact ? 12.5 : 14.0;
+  final pad = EdgeInsets.symmetric(horizontal: 10, vertical: compact ? 4 : 8);
+  final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(9));
+  final min = Size(0, compact ? 30 : 40);
+  final label = Text(b.text, maxLines: 1, overflow: TextOverflow.ellipsis);
+  switch (b.style) {
     case InAppButtonStyle.primary:
-      return FilledButton(onPressed: onPressed, child: Text(button.text));
-    case InAppButtonStyle.secondary:
-      return OutlinedButton(onPressed: onPressed, child: Text(button.text));
-    case InAppButtonStyle.destructive:
       return FilledButton(
-        style: FilledButton.styleFrom(backgroundColor: Colors.red),
-        onPressed: onPressed,
-        child: Text(button.text),
+        style: FilledButton.styleFrom(
+          backgroundColor: _primary,
+          foregroundColor: Colors.white,
+          padding: pad,
+          minimumSize: min,
+          shape: shape,
+          textStyle: TextStyle(fontSize: size, fontWeight: FontWeight.w700),
+        ),
+        onPressed: () => onTap(b),
+        child: label,
+      );
+    case InAppButtonStyle.secondary:
+      return OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: fg.withValues(alpha: 0.85),
+          side: BorderSide(color: fg.withValues(alpha: 0.85)),
+          padding: pad,
+          minimumSize: min,
+          shape: shape,
+          textStyle: TextStyle(fontSize: size, fontWeight: FontWeight.w700),
+        ),
+        onPressed: () => onTap(b),
+        child: label,
       );
     case InAppButtonStyle.text:
+    case InAppButtonStyle.destructive:
       return TextButton(
-        onPressed: onPressed,
-        style: textColor == null
-            ? null
-            : TextButton.styleFrom(foregroundColor: textColor),
-        child: Text(button.text),
+        style: TextButton.styleFrom(
+          foregroundColor: b.style == InAppButtonStyle.destructive ? _destructive : fg.withValues(alpha: 0.8),
+          padding: pad,
+          minimumSize: Size(0, compact ? 30 : 32),
+          shape: shape,
+          textStyle: TextStyle(fontSize: size, fontWeight: FontWeight.w500),
+        ),
+        onPressed: () => onTap(b),
+        child: label,
       );
   }
 }
+
+/// Buttons stacked (modal, full screen) or side by side (card); null without buttons.
+Widget? _buttons(InAppMessageContent c, Color fg, ValueChanged<InAppButton> onTap, {required bool row}) {
+  if (c.buttons.isEmpty) return null;
+  final items = [for (final b in c.buttons) _button(b, fg, onTap)];
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+    child: row
+        ? Row(children: [
+            for (var i = 0; i < items.length; i++) ...[
+              if (i > 0) const SizedBox(width: 6),
+              Expanded(child: items[i]),
+            ],
+          ])
+        : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            for (var i = 0; i < items.length; i++) ...[
+              if (i > 0) const SizedBox(height: 6),
+              items[i],
+            ],
+          ]),
+  );
+}
+
+/// Round close button for the panel's top corner (end side: left in right-to-left).
+Widget _roundClose(BuildContext context, VoidCallback onDismiss) => Semantics(
+      button: true,
+      label: _closeLabel(context),
+      child: GestureDetector(
+        onTap: onDismiss,
+        child: Container(
+          width: 28,
+          height: 28,
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(color: Color(0x59000000), shape: BoxShape.circle),
+          child: const Icon(Icons.close, size: 16, color: Colors.white),
+        ),
+      ),
+    );
+
+Widget _panel({required Color bg, required double radius, required double elevation, required Widget child}) => Material(
+      color: bg,
+      elevation: elevation,
+      shadowColor: Colors.black54,
+      borderRadius: BorderRadius.circular(radius),
+      clipBehavior: Clip.antiAlias,
+      child: child,
+    );
 
 // ==================== Renderers ====================
 
@@ -397,84 +511,41 @@ class _ModalRenderer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = _parseColor(content.backgroundColor) ??
-        theme.modalBackgroundColor ??
-        Theme.of(context).dialogTheme.backgroundColor ??
-        Theme.of(context).colorScheme.surface;
-    final fg = _parseColor(content.textColor) ??
-        theme.modalTextColor ??
-        Theme.of(context).colorScheme.onSurface;
-    final radius = theme.modalBorderRadius ?? 16;
-    final elevation = theme.modalElevation ?? 8;
-    final maxWidth = theme.modalMaxWidth ?? 400;
-    final backdrop = theme.backdropColor ?? Colors.black.withValues(alpha: 0.5);
+    final bg = _parseColor(content.backgroundColor) ?? theme.modalBackgroundColor ?? Colors.white;
+    final fg = _parseColor(content.textColor) ?? theme.modalTextColor ?? _defaultText;
+    final backdrop = theme.backdropColor ?? Colors.black.withValues(alpha: 0.45);
 
     return _FadeIn(
       duration: theme.animationDuration,
       child: Stack(
         children: [
           Positioned.fill(
-            child: GestureDetector(
-              onTap: onDismiss,
-              child: Container(color: backdrop),
-            ),
+            child: GestureDetector(onTap: onDismiss, child: ColoredBox(color: backdrop)),
           ),
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Material(
-                color: bg,
-                borderRadius: BorderRadius.circular(radius),
-                clipBehavior: Clip.antiAlias,
-                elevation: elevation,
+          SafeArea(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxWidth),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (content.imageUrl != null)
-                        AspectRatio(
-                          aspectRatio: 16 / 9,
-                          child: _buildImage(content.imageUrl!),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.all(20),
+                  constraints: BoxConstraints(maxWidth: theme.modalMaxWidth ?? 420),
+                  child: _panel(
+                    bg: bg,
+                    radius: theme.modalBorderRadius ?? 16,
+                    elevation: theme.modalElevation ?? 12,
+                    child: Stack(children: [
+                      SingleChildScrollView(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text(
-                              content.title,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(color: fg),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              content.body,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(color: fg),
-                            ),
-                            if (content.buttons.isNotEmpty) ...[
-                              const SizedBox(height: 20),
-                              Wrap(
-                                alignment: WrapAlignment.end,
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: content.buttons
-                                    .map((b) => _buildButton(
-                                        context, b, onButtonTap, fg))
-                                    .toList(),
-                              ),
-                            ],
+                            if (content.imageUrl != null) _image(content.imageUrl!, kInAppModalImageRatio),
+                            _texts(context, content, fg, titleSize: 16, bodySize: 13.5),
+                            _buttons(content, fg, onButtonTap, row: false) ?? const SizedBox(height: 12),
                           ],
                         ),
                       ),
-                    ],
+                      PositionedDirectional(top: 8, end: 8, child: _roundClose(context, onDismiss)),
+                    ]),
                   ),
                 ),
               ),
@@ -501,84 +572,71 @@ class _BannerRenderer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = _parseColor(content.backgroundColor) ??
-        theme.bannerBackgroundColor ??
-        Theme.of(context).colorScheme.surface;
-    final fg = _parseColor(content.textColor) ??
-        theme.bannerTextColor ??
-        Theme.of(context).colorScheme.onSurface;
-    final radius = theme.bannerBorderRadius ?? 12;
-    final elevation = theme.bannerElevation ?? 4;
-    final safe = MediaQuery.of(context).padding;
+    final bg = _parseColor(content.backgroundColor) ?? theme.bannerBackgroundColor ?? Colors.white;
+    final fg = _parseColor(content.textColor) ?? theme.bannerTextColor ?? _defaultText;
+    final bottom = content.position == 'bottom';
 
-    return Align(
-      alignment: Alignment.topCenter,
-      child: _SlideDownFade(
-        duration: theme.animationDuration,
-        child: SafeArea(
-          minimum: EdgeInsets.only(top: safe.top),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Material(
-              color: bg,
-              elevation: elevation,
-              borderRadius: BorderRadius.circular(radius),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: content.buttons.isEmpty ? onDismiss : null,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      if (content.imageUrl != null)
-                        Padding(
-                          padding: const EdgeInsetsDirectional.only(end: 12),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: SizedBox(
-                              width: 48,
-                              height: 48,
-                              child: _buildImage(content.imageUrl!),
-                            ),
-                          ),
-                        ),
-                      Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              content.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleSmall
-                                  ?.copyWith(color: fg),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              content.body,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(color: fg),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.close, color: fg),
-                        onPressed: onDismiss,
-                        tooltip: 'Dismiss',
-                      ),
-                    ],
-                  ),
+    final bar = _panel(
+      bg: bg,
+      radius: theme.bannerBorderRadius ?? 14,
+      elevation: theme.bannerElevation ?? 8,
+      child: InkWell(
+        onTap: content.buttons.isEmpty ? onDismiss : null,
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(10, 10, 4, 10),
+          child: Row(children: [
+            if (content.imageUrl != null)
+              Padding(
+                padding: const EdgeInsetsDirectional.only(end: 10),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(width: 40, height: 40, child: _image(content.imageUrl!, 1)),
                 ),
               ),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (content.title.isNotEmpty)
+                    Text(content.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: fg, fontSize: 14, fontWeight: FontWeight.w700)),
+                  if (content.body.isNotEmpty)
+                    Text(content.body,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: fg.withValues(alpha: 0.8), fontSize: 12)),
+                ],
+              ),
             ),
+            for (final b in content.buttons)
+              Padding(
+                padding: const EdgeInsetsDirectional.only(start: 6),
+                child: _button(b, fg, onButtonTap, compact: true),
+              ),
+            IconButton(
+              icon: Icon(Icons.close, size: 18, color: fg.withValues(alpha: 0.7)),
+              onPressed: onDismiss,
+              tooltip: _closeLabel(context),
+              visualDensity: VisualDensity.compact,
+            ),
+          ]),
+        ),
+      ),
+    );
+
+    return Align(
+      alignment: bottom ? Alignment.bottomCenter : Alignment.topCenter,
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(8, bottom ? 0 : 8, 8, bottom ? 12 : 0),
+          child: Dismissible(
+            key: const ValueKey('abrova_push_banner'),
+            direction: bottom ? DismissDirection.down : DismissDirection.up,
+            onDismissed: (_) => onDismiss(),
+            child: _Slide(from: bottom ? 0.4 : -0.4, duration: theme.animationDuration, child: bar),
           ),
         ),
       ),
@@ -601,79 +659,34 @@ class _FullscreenRenderer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = _parseColor(content.backgroundColor) ??
-        theme.fullscreenBackgroundColor ??
-        Theme.of(context).colorScheme.surface;
-    final fg = _parseColor(content.textColor) ??
-        theme.fullscreenTextColor ??
-        Theme.of(context).colorScheme.onSurface;
+    final bg = _parseColor(content.backgroundColor) ?? theme.fullscreenBackgroundColor ?? Colors.white;
+    final fg = _parseColor(content.textColor) ?? theme.fullscreenTextColor ?? _defaultText;
+    final insets = MediaQuery.paddingOf(context);
 
     return _FadeIn(
       duration: theme.animationDuration,
       child: Material(
         color: bg,
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Align(
-                alignment: AlignmentDirectional.topEnd,
-                child: IconButton(
-                  icon: Icon(Icons.close, color: fg),
-                  onPressed: onDismiss,
-                  tooltip: 'Dismiss',
-                ),
+        child: Stack(children: [
+          Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  if (content.imageUrl != null)
+                    _image(content.imageUrl!, kInAppFullscreenImageRatio)
+                  else
+                    SizedBox(height: insets.top + 48),
+                  _texts(context, content, fg, titleSize: 22, bodySize: 15, top: 18),
+                ]),
               ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24, vertical: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (content.imageUrl != null)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 20),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: _buildImage(content.imageUrl!),
-                          ),
-                        ),
-                      Text(
-                        content.title,
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall
-                            ?.copyWith(color: fg),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        content.body,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyLarge
-                            ?.copyWith(color: fg),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              if (content.buttons.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: content.buttons
-                        .map((b) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: _buildButton(context, b, onButtonTap, fg),
-                            ))
-                        .toList(),
-                  ),
-                ),
-            ],
-          ),
-        ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(bottom: insets.bottom + 8),
+              child: _buttons(content, fg, onButtonTap, row: false) ?? const SizedBox(height: 8),
+            ),
+          ]),
+          PositionedDirectional(top: insets.top + 10, end: 8, child: _roundClose(context, onDismiss)),
+        ]),
       ),
     );
   }
@@ -694,92 +707,40 @@ class _CardRenderer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = _parseColor(content.backgroundColor) ??
-        theme.cardBackgroundColor ??
-        Theme.of(context).colorScheme.surface;
-    final fg = _parseColor(content.textColor) ??
-        theme.cardTextColor ??
-        Theme.of(context).colorScheme.onSurface;
-    final radius = theme.cardBorderRadius ?? 16;
-    final elevation = theme.cardElevation ?? 6;
-    final maxWidth = theme.cardMaxWidth ?? 480;
+    final bg = _parseColor(content.backgroundColor) ?? theme.cardBackgroundColor ?? Colors.white;
+    final fg = _parseColor(content.textColor) ?? theme.cardTextColor ?? _defaultText;
 
+    final card = _panel(
+      bg: bg,
+      radius: theme.cardBorderRadius ?? 16,
+      elevation: theme.cardElevation ?? 12,
+      child: Stack(children: [
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (content.imageUrl != null) _image(content.imageUrl!, kInAppCardImageRatio),
+            _texts(context, content, fg, titleSize: 15, bodySize: 13),
+            _buttons(content, fg, onButtonTap, row: true) ?? const SizedBox(height: 12),
+          ],
+        ),
+        PositionedDirectional(top: 8, end: 8, child: _roundClose(context, onDismiss)),
+      ]),
+    );
+
+    // At the bottom without dimming: the app stays usable around it.
     return Align(
       alignment: Alignment.bottomCenter,
-      child: _SlideUpFade(
-        duration: theme.animationDuration,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Material(
-              color: bg,
-              elevation: elevation,
-              borderRadius: BorderRadius.circular(radius),
-              clipBehavior: Clip.antiAlias,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxWidth),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (content.imageUrl != null)
-                      AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: _buildImage(content.imageUrl!),
-                      ),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  content.title,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(color: fg),
-                                ),
-                              ),
-                              IconButton(
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                icon: Icon(Icons.close, size: 20, color: fg),
-                                onPressed: onDismiss,
-                                tooltip: 'Dismiss',
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            content.body,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(color: fg),
-                          ),
-                          if (content.buttons.isNotEmpty) ...[
-                            const SizedBox(height: 12),
-                            Wrap(
-                              alignment: WrapAlignment.end,
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: content.buttons
-                                  .map((b) => _buildButton(
-                                      context, b, onButtonTap, fg))
-                                  .toList(),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 0, 10, 16),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: theme.cardMaxWidth ?? 480),
+            child: Dismissible(
+              key: const ValueKey('abrova_push_card'),
+              direction: DismissDirection.down,
+              onDismissed: (_) => onDismiss(),
+              child: _Slide(from: 0.4, duration: theme.animationDuration, child: card),
             ),
           ),
         ),
@@ -790,101 +751,43 @@ class _CardRenderer extends StatelessWidget {
 
 // ==================== Animations ====================
 
-class _FadeIn extends StatefulWidget {
+class _FadeIn extends StatelessWidget {
   const _FadeIn({required this.child, this.duration});
   final Widget child;
   final Duration? duration;
 
   @override
-  State<_FadeIn> createState() => _FadeInState();
-}
-
-class _FadeInState extends State<_FadeIn>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: widget.duration ?? const Duration(milliseconds: 180),
-  )..forward();
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (MediaQuery.of(context).disableAnimations) return widget.child;
-    return FadeTransition(opacity: _c, child: widget.child);
-  }
-}
-
-class _SlideDownFade extends StatefulWidget {
-  const _SlideDownFade({required this.child, this.duration});
-  final Widget child;
-  final Duration? duration;
-
-  @override
-  State<_SlideDownFade> createState() => _SlideDownFadeState();
-}
-
-class _SlideDownFadeState extends State<_SlideDownFade>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: widget.duration ?? const Duration(milliseconds: 220),
-  )..forward();
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (MediaQuery.of(context).disableAnimations) return widget.child;
-    return SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(0, -0.3),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(parent: _c, curve: Curves.easeOut)),
-      child: FadeTransition(opacity: _c, child: widget.child),
+    if (MediaQuery.of(context).disableAnimations) return child;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: duration ?? const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      builder: (_, v, c) => Opacity(opacity: v, child: c),
+      child: child,
     );
   }
 }
 
-class _SlideUpFade extends StatefulWidget {
-  const _SlideUpFade({required this.child, this.duration});
+/// Fades in while sliding from [from] (a fraction of its own height; negative = from above).
+class _Slide extends StatelessWidget {
+  const _Slide({required this.child, required this.from, this.duration});
   final Widget child;
+  final double from;
   final Duration? duration;
 
   @override
-  State<_SlideUpFade> createState() => _SlideUpFadeState();
-}
-
-class _SlideUpFadeState extends State<_SlideUpFade>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: widget.duration ?? const Duration(milliseconds: 220),
-  )..forward();
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (MediaQuery.of(context).disableAnimations) return widget.child;
-    return SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(0, 0.3),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(parent: _c, curve: Curves.easeOut)),
-      child: FadeTransition(opacity: _c, child: widget.child),
+    if (MediaQuery.of(context).disableAnimations) return child;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: duration ?? const Duration(milliseconds: 220),
+      curve: Curves.easeOut,
+      builder: (_, v, c) => Opacity(
+        opacity: v,
+        child: FractionalTranslation(translation: Offset(0, from * (1 - v)), child: c),
+      ),
+      child: child,
     );
   }
 }

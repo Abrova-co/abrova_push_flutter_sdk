@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.1.38] - 2026-11-22
+Requires `abrova-push-android:0.1.24` and `AbrovaPushSDK ~> 0.1.23`. Bundled web SDK 0.1.21.
+### Added
+- Notifications turned off: `AbrovaPush.onNotificationPermissionChanged` (a stream), `notificationPermission()` and
+  `openNotificationSettings()`, with the same names as `abrova_push_desktop`
+  (`AbrovaPushNotificationPermission.allowed` / `notAllowed`; `notNeeded` on the web). The native SDKs also tell
+  Abrova, so the Console shows these devices and why their messages were not seen.
+- In-app messages update at once: when you publish or change one in the Console, open apps show it within a minute.
+- `InAppMessageContent.position` (`top` or `bottom`).
+### Changed
+- `AbrovaPushInAppOverlay` draws each type like the Console's preview: image 2:1 in a modal and full screen, 3:1 in a
+  card, a small square in a banner; a banner at the top or the bottom with its buttons; a card at the bottom without
+  dimming; close button on the corner (left for right-to-left text). Its public API and theme are unchanged.
+### Fixed
+- `AbrovaPushInAppOverlay` placed above `MaterialApp`, as documented, failed with "No Directionality widget found"
+  when a message showed. It now works there and below `MaterialApp`.
+
 ## [0.1.37] - 2026-11-18
 
 Requires `abrova-push-android:0.1.23` and `AbrovaPushSDK ~> 0.1.22`. Bundled web SDK 0.1.21.

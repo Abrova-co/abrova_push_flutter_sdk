@@ -713,6 +713,12 @@ class AbrovaPushPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                 AbrovaPush.openServiceNotificationSettings()
                 result.success(null)
             }
+            "areNotificationsEnabled" -> {
+                result.success(AbrovaPush.areNotificationsEnabled())
+            }
+            "openNotificationSettings" -> {
+                result.success(AbrovaPush.openNotificationSettings())
+            }
             else -> result.notImplemented()
         }
     }
@@ -733,6 +739,11 @@ class AbrovaPushPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
 
         // Initialize native SDK
         AbrovaPush.init(context, abrovaPushConfig)
+
+        // Notifications turned on or off (e.g. back from Settings).
+        AbrovaPush.setNotificationPermissionListener { enabled ->
+            invokeFlutterMethod("onNotificationPermissionChanged", enabled)
+        }
 
         // Set up callback to forward events to Flutter
         AbrovaPush.setCallback(object : AbrovaPushCallbackAdapter() {
