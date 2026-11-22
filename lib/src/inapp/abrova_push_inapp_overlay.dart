@@ -123,7 +123,7 @@ class AbrovaPushInAppTheme {
 /// The native SDKs skip their own UI once a callback is set, and the Flutter
 /// plugin always sets that callback. Without this overlay, messages fetch,
 /// match, and get silently dropped. Drop this widget above your MaterialApp
-/// and messages render for free.
+/// (or inside it, in `builder`) and messages render for free.
 ///
 /// ```dart
 /// AbrovaPushInAppOverlay(
@@ -234,12 +234,15 @@ class _AbrovaPushInAppOverlayState extends State<AbrovaPushInAppOverlay> {
         (_rtlLanguages.contains(PlatformDispatcher.instance.locale.languageCode.toLowerCase())
             ? TextDirection.rtl
             : TextDirection.ltr);
+    // The messages' Overlay sits BESIDE the app, not around it: around it, it was the app's root Overlay, and a
+    // text field's Copy/Paste toolbar (which goes to the root Overlay) found no localizations above MaterialApp and
+    // failed (a grey box in release). Empty, it lets every tap through to the app.
     return Directionality(
       textDirection: direction,
-      child: Overlay(
-        key: _overlayKey,
-        initialEntries: [
-          OverlayEntry(builder: (_) => widget.child),
+      child: Stack(
+        children: [
+          widget.child,
+          Positioned.fill(child: Overlay(key: _overlayKey)),
         ],
       ),
     );

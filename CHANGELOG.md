@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.40] - 2026-11-23
+Requires `abrova-push-android:0.1.25` and `AbrovaPushSDK ~> 0.1.24` (unchanged).
+### Fixed
+- With `AbrovaPushInAppOverlay` above `MaterialApp`, a text field's Copy/Paste toolbar failed (a grey page in release
+  builds) because the overlay had become the app's top `Overlay`. The overlay now sits beside your app and leaves its
+  `Overlay` alone; it works above `MaterialApp` or inside it (in `builder`). Nothing to change in your code.
+
 ## [0.1.39] - 2026-11-23
 Requires `abrova-push-android:0.1.25` and `AbrovaPushSDK ~> 0.1.24`. Bundled web SDK 0.1.21.
 ### Added
