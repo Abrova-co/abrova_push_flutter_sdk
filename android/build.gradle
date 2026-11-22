@@ -62,5 +62,5 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
     // Abrova Push Android SDK (published on Maven Central)
-    implementation 'ir.abrova:abrova-push-android:0.1.24'
+    implementation 'ir.abrova:abrova-push-android:0.1.25'
 }

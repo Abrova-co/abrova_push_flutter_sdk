@@ -719,6 +719,10 @@ class AbrovaPushPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
             "openNotificationSettings" -> {
                 result.success(AbrovaPush.openNotificationSettings())
             }
+            "requestNotificationPermission" -> {
+                activity?.let { AbrovaPush.requestNotificationPermission(it) }
+                result.success(null)
+            }
             else -> result.notImplemented()
         }
     }
@@ -734,7 +738,9 @@ class AbrovaPushPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
             autoRefresh = (config["autoRefresh"] as? Boolean) ?: true,
             wrapperSdkName = config["wrapperSdkName"] as? String,
             wrapperSdkVersion = config["wrapperSdkVersion"] as? String,
-            sendDiagnostics = (config["sendDiagnostics"] as? Boolean) ?: true
+            sendDiagnostics = (config["sendDiagnostics"] as? Boolean) ?: true,
+            askNotificationPermission = (config["askNotificationPermission"] as? Boolean) ?: true,
+            autoInAppTriggers = (config["autoInAppTriggers"] as? Boolean) ?: true
         )
 
         // Initialize native SDK

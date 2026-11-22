@@ -54,6 +54,18 @@ class AbrovaPushConfig {
   /// (default: true). Counts only, no personal data.
   final bool sendDiagnostics;
 
+  /// Android and iOS: ask for permission to show notifications by itself (default: true): Android when one of the
+  /// app's screens is shown after [AbrovaPush.init], iOS during [AbrovaPush.register]. False: the SDK never asks;
+  /// call [AbrovaPush.requestNotificationPermission] at the moment that suits your app.
+  final bool askNotificationPermission;
+
+  /// Android and iOS: show in-app messages whose trigger is "App open" or "Session start" by themselves (default:
+  /// true), as the computer SDK does: "App open" each time the app comes to the front, "Session start" when it
+  /// comes back after 30 minutes or more (and at its first start). Calling [AbrovaPush.triggerInAppOnAppOpen] or
+  /// [AbrovaPush.triggerInAppOnSessionStart] as well does no harm: a second trigger within a few seconds is ignored.
+  /// False: only your own calls trigger them.
+  final bool autoInAppTriggers;
+
   /// Web only: notifications while the web app is closed, through the browser's Web Push (default: false).
   ///
   /// Without it a Flutter web app gets messages only while it is open. With it, the Abrova Push service worker
@@ -81,6 +93,8 @@ class AbrovaPushConfig {
     this.autoRefresh = true,
     this.tokenProvider,
     this.sendDiagnostics = true,
+    this.askNotificationPermission = true,
+    this.autoInAppTriggers = true,
     this.webPush = false,
     this.webPushAtRoot = false,
   });
@@ -98,6 +112,9 @@ class AbrovaPushConfig {
       'wrapperSdkName': abrovaPushSdkName,
       'wrapperSdkVersion': abrovaPushSdkVersion,
       'sendDiagnostics': sendDiagnostics,
+      // Sent only when turned off (the native SDKs default to on), so by default they get the same map as before.
+      if (!askNotificationPermission) 'askNotificationPermission': false,
+      if (!autoInAppTriggers) 'autoInAppTriggers': false,
       // Web only; left out when off, so the native SDKs get the same map as before.
       if (webPush) 'webPush': true,
       if (webPush && webPushAtRoot) 'webPushAtRoot': true,

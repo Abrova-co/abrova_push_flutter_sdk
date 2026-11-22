@@ -429,6 +429,8 @@ public class AbrovaPushPlugin: NSObject, FlutterPlugin {
             AbrovaPush.shared.areNotificationsEnabled { enabled in result(enabled) }
         case "openNotificationSettings":
             result(AbrovaPush.shared.openNotificationSettings())
+        case "requestNotificationPermission":
+            AbrovaPush.shared.requestNotificationPermission { _ in result(nil) }
 
         default:
             result(FlutterMethodNotImplemented)
@@ -455,7 +457,9 @@ public class AbrovaPushPlugin: NSObject, FlutterPlugin {
             autoRefresh: args["autoRefresh"] as? Bool ?? true,
             wrapperSdkName: args["wrapperSdkName"] as? String,
             wrapperSdkVersion: args["wrapperSdkVersion"] as? String,
-            sendDiagnostics: args["sendDiagnostics"] as? Bool ?? true
+            sendDiagnostics: args["sendDiagnostics"] as? Bool ?? true,
+            askNotificationPermission: args["askNotificationPermission"] as? Bool ?? true,
+            autoInAppTriggers: args["autoInAppTriggers"] as? Bool ?? true
         )
 
         AbrovaPush.shared.initialize(config: config)

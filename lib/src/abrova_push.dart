@@ -969,7 +969,27 @@ class AbrovaPush {
 
   /// Notifications were turned on or off (checked at [init] and each time the app comes back to the front, e.g.
   /// from Settings). Show your own "Turn on notifications" hint here and call [openNotificationSettings] from it.
-  static Stream<AbrovaPushNotificationPermission> get onNotificationPermissionChanged => _permission.stream;
+  ///
+  /// Each new listener first gets the current state (the SDK checks it at start, often before the app listens),
+  /// then every change.
+  static Stream<AbrovaPushNotificationPermission> get onNotificationPermissionChanged =>
+      Stream<AbrovaPushNotificationPermission>.multi((controller) {
+        var changed = false;
+        final sub = _permission.stream.listen((p) {
+          changed = true;
+          controller.add(p);
+        }, onError: controller.addError);
+        notificationPermission().then((p) {
+          if (!changed) controller.add(p);
+        }, onError: (_) {});
+        controller.onCancel = sub.cancel;
+      }, isBroadcast: true);
+
+  /// Asks the user to allow notifications (Android 13+ and iOS show their prompt; after the user answered, the
+  /// system answers at once with that choice). For apps that set `askNotificationPermission: false` and ask at their
+  /// own moment. The answer arrives on [onNotificationPermissionChanged].
+  static Future<void> requestNotificationPermission() =>
+      _channel.invokeMethod<void>('requestNotificationPermission');
 
   /// Whether notifications may be shown now (see [AbrovaPushNotificationPermission]).
   static Future<AbrovaPushNotificationPermission> notificationPermission() async {

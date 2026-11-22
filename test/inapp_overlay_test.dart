@@ -149,8 +149,40 @@ void main() {
     expect(await AbrovaPush.notificationPermission(), AbrovaPushNotificationPermission.notNeeded);
     expect(await AbrovaPush.openNotificationSettings(), isTrue);
 
-    final next = AbrovaPush.onNotificationPermissionChanged.first;
-    await fromNative('onNotificationPermissionChanged', false);
-    expect(await next, AbrovaPushNotificationPermission.notAllowed);
+    // A new listener first gets the current state (the SDK reports it at start, often before the app listens),
+    // then each change.
+    enabled = false;
+    final events = <AbrovaPushNotificationPermission>[];
+    final sub = AbrovaPush.onNotificationPermissionChanged.listen(events.add);
+    for (var i = 0; i < 5; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(events, [AbrovaPushNotificationPermission.notAllowed]);
+    await fromNative('onNotificationPermissionChanged', true);
+    for (var i = 0; i < 5; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(events.last, AbrovaPushNotificationPermission.allowed);
+    await sub.cancel();
+
+    // A change that arrives while the current state is being read: the older state never comes after it.
+    enabled = false;
+    final second = <AbrovaPushNotificationPermission>[];
+    final sub2 = AbrovaPush.onNotificationPermissionChanged.listen(second.add);
+    await fromNative('onNotificationPermissionChanged', true);
+    for (var i = 0; i < 5; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(second.last, AbrovaPushNotificationPermission.allowed);
+    await sub2.cancel();
+  });
+
+  test('config sends the two new options only when turned off', () {
+    final map = const AbrovaPushConfig(apiKey: 'k').toMap();
+    expect(map.containsKey('askNotificationPermission'), isFalse); // default on: the native default
+    expect(map.containsKey('autoInAppTriggers'), isFalse);
+    final own = const AbrovaPushConfig(apiKey: 'k', askNotificationPermission: false, autoInAppTriggers: false).toMap();
+    expect(own['askNotificationPermission'], isFalse);
+    expect(own['autoInAppTriggers'], isFalse);
   });
 }

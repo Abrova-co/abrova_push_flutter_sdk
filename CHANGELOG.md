@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.39] - 2026-11-23
+Requires `abrova-push-android:0.1.25` and `AbrovaPushSDK ~> 0.1.24`. Bundled web SDK 0.1.21.
+### Added
+- In-app messages whose trigger is "App open" or "Session start" now show by themselves on Android and iOS, as in
+  `abrova_push_desktop`. Before, they showed only if the app called `AbrovaPush.triggerInAppOnAppOpen()` itself.
+  Apps that still call it are fine: a second trigger within a few seconds is ignored, so nothing shows twice.
+  `AbrovaPushConfig(autoInAppTriggers: false)` keeps the old behaviour.
+- `AbrovaPushConfig(askNotificationPermission: false)`: the SDK never asks for permission to show notifications;
+  call `AbrovaPush.requestNotificationPermission()` at the moment that suits your app. Default `true` (unchanged).
+### Changed
+- `onNotificationPermissionChanged` gives each new listener the current state first, then every change. Before, an
+  app that started listening after the SDK's first check missed it.
+### Fixed
+- On Android the permission prompt could appear before `init()`; it now waits for `init()`.
+
 ## [0.1.38] - 2026-11-22
 Requires `abrova-push-android:0.1.24` and `AbrovaPushSDK ~> 0.1.23`. Bundled web SDK 0.1.21.
 ### Added
