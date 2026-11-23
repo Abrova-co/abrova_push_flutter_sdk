@@ -260,4 +260,26 @@ void main() {
     await tester.tap(find.text('Go'));
     expect(taps, 1);
   });
+
+  testWidgets('a message that comes before the overlay listens shows once it does', (tester) async {
+    // The screen of an app whose process outlived it: "App open" fires before the new screen's overlay exists.
+    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+    await fromNative('onInAppMessageReady', message('modal', title: 'Early'));
+    await tester.pumpWidget(AbrovaPushInAppOverlay(
+      child: MaterialApp(home: const Scaffold(body: SizedBox.expand())),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Early'), findsOneWidget);
+  });
+
+  testWidgets('a waiting message is handed over only once', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+    await fromNative('onInAppMessageReady', message('banner', title: 'Once'));
+    var got = 0;
+    AbrovaPush.onInAppMessageReady((_) => got++);
+    AbrovaPush.onInAppMessageReady((_) => got++);
+    await tester.pump();
+    expect(got, 1);
+  });
 }

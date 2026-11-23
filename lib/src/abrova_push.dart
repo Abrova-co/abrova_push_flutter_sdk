@@ -516,9 +516,31 @@ class AbrovaPush {
 
   // ==================== In-App Messages ====================
 
-  /// Set callback for when an in-app message is ready to be displayed
+  /// A message that came before anything listened, and when: the app's screen was still starting (for example
+  /// an app whose process outlived its screen, where "App open" fires as soon as the new screen attaches).
+  static InAppMessage? _waitingInApp;
+  static DateTime? _waitingInAppAt;
+
+  /// How long such a message waits for the app's in-app display to start listening.
+  static const Duration _inAppWaitLimit = Duration(seconds: 30);
+
+  /// Set callback for when an in-app message is ready to be displayed. A message that came in the moments before
+  /// (no callback yet, at most 30 seconds ago) is handed to it right away instead of being lost.
   static void onInAppMessageReady(OnInAppMessageReadyCallback callback) {
     _onInAppMessageReady = callback;
+    final waiting = _waitingInApp;
+    final at = _waitingInAppAt;
+    _waitingInApp = null;
+    _waitingInAppAt = null;
+    if (waiting != null && at != null && DateTime.now().difference(at) <= _inAppWaitLimit) {
+      scheduleMicrotask(() => _onInAppMessageReady?.call(waiting));
+    }
+  }
+
+  /// Stop handing in-app messages to [callback] (if it is still the one set), so a message that comes before the
+  /// next display listens waits for it instead (see [onInAppMessageReady]).
+  static void removeInAppMessageReady(OnInAppMessageReadyCallback callback) {
+    if (_onInAppMessageReady == callback) _onInAppMessageReady = null;
   }
 
   /// Set callback for when an in-app message button is clicked
@@ -1214,7 +1236,14 @@ class AbrovaPush {
             Map<String, dynamic>.from(call.arguments as Map),
           );
           print('[AbrovaPush] In-app message ready: ${message.name}');
-          _onInAppMessageReady?.call(message);
+          final callback = _onInAppMessageReady;
+          if (callback != null) {
+            callback(message);
+          } else {
+            // Shown (and counted) by the native side already: keep it for the display that is about to listen.
+            _waitingInApp = message;
+            _waitingInAppAt = DateTime.now();
+          }
           _trackEvent(AbrovaPushAnalyticsEvent.inAppMessageDisplayed, {
             'message_id': message.id,
             'message_name': message.name,

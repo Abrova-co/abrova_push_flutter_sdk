@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.1.41] - 2026-11-23
+Requires `abrova-push-android:0.1.25` and `AbrovaPushSDK ~> 0.1.24` (unchanged). Bundled web SDK 0.1.21.
+### Added
+- In-app messages on the web, like on Android and iOS: "Session start" and "App open" messages show by themselves
+  when the page opens, and "App open" again each time the person comes back to the page (also the app added to the
+  home screen), with "Session start" first after 30 minutes away. They are drawn by `AbrovaPushInAppOverlay`, the
+  same as on phones, and their views, button taps and closes are counted. `triggerInAppOnAppOpen()`,
+  `triggerInAppEvent()` and `showInAppMessage()` work on the web too. `AbrovaPushConfig(autoInAppTriggers: false)`
+  turns the automatic triggers off, as on phones.
+- `AbrovaPush.removeInAppMessageReady(callback)`.
+### Fixed
+- An in-app message could be lost when it came before the app's in-app display was listening, while it was still
+  counted as shown. This happened when the app's screen opened again while the app itself was still running in the
+  background (for example, an app that keeps a notification service running): "App open" fired before the new
+  screen was built. Such a message now waits up to 30 seconds and shows as soon as `AbrovaPushInAppOverlay` is
+  ready. Nothing to change in your code.
+
 ## [0.1.40] - 2026-11-23
 Requires `abrova-push-android:0.1.25` and `AbrovaPushSDK ~> 0.1.24` (unchanged).
 ### Fixed

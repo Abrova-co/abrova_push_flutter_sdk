@@ -171,6 +171,7 @@ class _AbrovaPushInAppOverlayState extends State<AbrovaPushInAppOverlay> {
 
   @override
   void dispose() {
+    AbrovaPush.removeInAppMessageReady(_handleMessageReady);
     _delayTimer?.cancel();
     _removeCurrent();
     super.dispose();
@@ -189,9 +190,16 @@ class _AbrovaPushInAppOverlayState extends State<AbrovaPushInAppOverlay> {
     }
   }
 
-  void _present(InAppMessage message) {
+  void _present(InAppMessage message, {bool waited = false}) {
+    if (!mounted) return;
     final overlay = _overlayKey.currentState;
-    if (overlay == null) return;
+    if (overlay == null) {
+      // Not built yet (a message handed over while this widget starts): show it after the first frame.
+      if (!waited) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _present(message, waited: true));
+      }
+      return;
+    }
 
     _removeCurrent();
     _currentMessage = message;

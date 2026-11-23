@@ -44,6 +44,19 @@ extension type _Sdk(JSObject _) implements JSObject {
   external JSFunction onError(JSFunction callback);
   external JSFunction onAuthError(JSFunction callback);
   external JSFunction onNotificationClick(JSFunction callback);
+  external _InApp get inApp;
+}
+
+/// The JS SDK's in-app module (`sdk.inApp`), run with `display: 'manual'`: it picks the message (trigger, dates,
+/// sessions, "show at most"), waits its delay and counts the impression; the Flutter overlay draws it, as on phones.
+extension type _InApp(JSObject _) implements JSObject {
+  external JSFunction onMessageReady(JSFunction callback);
+  external JSPromise<JSAny?> triggerOnAppOpen();
+  external JSPromise<JSAny?> triggerSessionStart();
+  external JSPromise<JSAny?> triggerEvent(String name, JSAny? properties);
+  external JSPromise<JSAny?> showMessage(String messageId);
+  external JSPromise<JSAny?> recordImpression(String messageId, String action, [String? buttonId]);
+  external void dismissCurrentMessage();
 }
 
 class AbrovaPushWeb {
@@ -123,6 +136,28 @@ class AbrovaPushWeb {
       case 'clearBadge':
         _sdk?.clearBadge();
         return null;
+      case 'triggerInAppOnAppOpen':
+        await _sdk?.inApp.triggerOnAppOpen().toDart;
+        return null;
+      case 'triggerInAppOnSessionStart':
+        await _sdk?.inApp.triggerSessionStart().toDart;
+        return null;
+      case 'triggerInAppEvent':
+        await _sdk?.inApp.triggerEvent(args['eventName'] as String? ?? '', (args['properties'] as Object?).jsify()).toDart;
+        return null;
+      case 'showInAppMessage':
+        await _sdk?.inApp.showMessage(args['messageId'] as String? ?? '').toDart;
+        return null;
+      // The overlay closed the message: report it, and let the module pick the next one.
+      case 'recordInAppButtonClick':
+        _closeInApp(args['messageId'] as String?, 'button_click', args['buttonId'] as String?);
+        return null;
+      case 'recordInAppDismissed':
+        _closeInApp(args['messageId'] as String?, 'dismiss');
+        return null;
+      case 'dismissInAppMessage':
+        _sdk?.inApp.dismissCurrentMessage();
+        return null;
       default:
         // Android/iOS features (notification channels, VoIP, battery settings,
         // the native inbox and in-app caches) have no web counterpart here.
@@ -149,7 +184,15 @@ class AbrovaPushWeb {
       options['serviceWorkerScope'] = _appPath(config['webPushAtRoot'] == true ? '' : _workerScope).toJS;
     }
     if (_useTokenProvider) options['tokenProvider'] = _tokenProvider.toJS;
+    // In-app messages like on phones: "Session start" and "App open" by themselves when the page opens (unless the
+    // app turned autoInAppTriggers off), drawn by the Flutter overlay.
+    final autoInApp = config['autoInAppTriggers'] != false;
+    options['inApp'] = {'enabled': true, 'display': 'manual', 'autoTrigger': autoInApp}.jsify();
     final sdk = _Sdk(constructor.callAsConstructor<JSObject>(options));
+    sdk.inApp.onMessageReady(((JSObject message) {
+      final map = _inAppMap(message);
+      if (map != null) _send('onInAppMessageReady', map);
+    }).toJS);
     sdk.onMessage(((JSObject message) {
       _send('onMessage', _toMap(message));
     }).toJS);
@@ -175,6 +218,7 @@ class AbrovaPushWeb {
       });
     }).toJS);
     _sdk = sdk;
+    if (autoInApp) _watchReturns(sdk);
     // Web Push: register the worker now and let it become active, so register() from a tap can subscribe at once
     // (Safari on iPhone accepts a subscription only right after the tap).
     if (webPush) {
@@ -206,6 +250,60 @@ class AbrovaPushWeb {
     if (message == null) return null;
     final value = message.dartify();
     return value is Map ? value.map((k, v) => MapEntry('$k', v)) : null;
+  }
+
+  /// The message as the Dart side reads it (the native SDKs' shape): dates in milliseconds, and no delay left
+  /// (the module already waited it).
+  static Map<String, dynamic>? _inAppMap(JSObject message) {
+    final map = _toMap(message);
+    if (map == null) return null;
+    int? millis(Object? date) => date is String ? DateTime.tryParse(date)?.millisecondsSinceEpoch : (date is num ? date.toInt() : null);
+    return {
+      ...map,
+      'startDate': millis(map['startDate']),
+      'endDate': millis(map['endDate']),
+      'delaySeconds': 0,
+    };
+  }
+
+  void _closeInApp(String? messageId, String action, [String? buttonId]) {
+    final inApp = _sdk?.inApp;
+    if (inApp == null) return;
+    if (messageId != null && messageId.isNotEmpty) {
+      unawaited(inApp.recordImpression(messageId, action, buttonId).toDart.then((_) {}, onError: (_) {}));
+    }
+    inApp.dismissCurrentMessage();
+  }
+
+  /// Back to the page (tab or home-screen app shown again), as phones do when the app comes to the front: "App
+  /// open", and "Session start" first after [_sessionTimeout] away.
+  static const _sessionTimeout = Duration(minutes: 30);
+  DateTime? _hiddenAt;
+
+  void _watchReturns(_Sdk sdk) {
+    final document = globalContext['document'] as JSObject;
+    document.callMethod<JSAny?>(
+      'addEventListener'.toJS,
+      'visibilitychange'.toJS,
+      ((JSAny? _) {
+        final hidden = (document['visibilityState'] as JSString?)?.toDart == 'hidden';
+        if (hidden) {
+          _hiddenAt = DateTime.now();
+          return;
+        }
+        final since = _hiddenAt;
+        if (since == null) return;
+        _hiddenAt = null;
+        unawaited(() async {
+          try {
+            if (DateTime.now().difference(since) >= _sessionTimeout) await sdk.inApp.triggerSessionStart().toDart;
+            await sdk.inApp.triggerOnAppOpen().toDart;
+          } catch (_) {
+            // Offline: the next return tries again.
+          }
+        }());
+      }).toJS,
+    );
   }
 
   static int _logLevel(String? name) => switch (name) {
